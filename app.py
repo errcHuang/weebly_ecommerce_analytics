@@ -7,6 +7,9 @@ import dash_html_components as html
 
 from datetime import datetime as dt
 from datetime import timedelta
+from uszipcode import SearchEngine
+
+
 import dateutil.parser
 
 import pandas as pd
@@ -182,19 +185,22 @@ app.layout = html.Div(children=[
                 ], 
                 className='row'),
                 
-                # graphs
+                # Sales/Orders Bar Charts
                 html.Div([
                     dcc.Graph(id='sales-graph',
                               style={'display':'inline-block'}),
                     dcc.Graph(id='orders-graph',
                               style={'display':'inline-block'})
                 ], className='row'),
+                    
+                # US Sales Map
+                html.Div([
+                    dcc.Graph(id='sales-map',
+                              style={'display':'inline-block'}),
+                    dcc.Graph(id='product-sales-map',
+                              style={'display':'inline-block'})
+                ], className='row'),
 
-            
-                #html.Div([
-                #    dcc.Graph(id='orders-graph')
-                #], className='row'),
-                
                 #table
                 html.Div([
                     dcc.Graph(id='revenue-table')
@@ -207,7 +213,6 @@ app.layout = html.Div(children=[
                 # indicators row
                 html.Div(id='customer-indicators',
                 className='row'),
-                
                 html.Br(),
                 
                 # histograms
@@ -216,7 +221,7 @@ app.layout = html.Div(children=[
                 ]),
                    
            ])
-   ], style={'font-size': 'large'}),
+   ], style={'font-size': '24px'}),
                         
    #html.Hr(),
    
@@ -399,7 +404,129 @@ def display_orders(df, scale_str, display_promo=False):
     )
     return fig
 
-## Create/adjust sales figures based on change in input
+def generate_sales_maps(df):
+    single_orders = df.drop_duplicates('Order #').reset_index(drop=True)
+    single_orders = single_orders.groupby(['Shipping Postal Code'], as_index=False).sum()
+    
+    zips = single_orders['Shipping Postal Code'].astype(int).astype(str)
+    
+    # Converting zip code to latitude and longitude
+    search = SearchEngine()
+    lat = []
+    long = []
+    for z in zips:
+        info = search.by_zipcode(z)
+        lat.append(info.lat)
+        long.append(info.lng)      
+    single_orders['lat'] = pd.Series(lat)
+    single_orders['long'] = pd.Series(long)
+    
+    #remove outlier
+    #single_orders = single_orders.loc[single_orders.loc[:,'Subtotal']<250,:] #minus the $250 outlier order
+    
+    fig1 = px.scatter_geo(single_orders, lat='lat', lon='long', 
+                         locationmode='USA-states',
+                         size='Subtotal',
+                         color='Subtotal',
+                         color_continuous_scale='OrRd',
+                         title='Sales excluding shipping ($) by zipcode',
+                         hover_data=['Shipping Postal Code'],
+                         scope='usa')
+    
+    fig1.update_traces(
+        textfont=dict(size=20),
+        marker=dict(
+            colorbar=dict(
+                tickfont=dict(size=12),
+                titlefont=dict(size=30)
+            ),
+            line=dict(width=0.5,color='DarkSlateGrey'),
+        ),
+    )
+            
+    fig1.update_layout(
+        titlefont=dict(size=20),
+        margin=go.layout.Margin(
+            l=0,
+            r=0,
+            b=0,
+            t=50,
+            pad=4
+        ),
+    )
+            
+    filled_df = df.fillna(method='ffill')
+    zipcodes = filled_df['Shipping Postal Code'].astype(int).astype(str)
+    order2zip = dict(zip( filled_df['Order #'], zipcodes)) #could potentially use this for re-adding dates back to orders hm
+    product_orders = filled_df.groupby(['Order #','Product Name'], as_index=False).sum()
+    product_orders["Shipping Postal Code"] = product_orders["Order #"].map(order2zip)
+    
+    
+    # Converting zip code to latitude and longitude
+    search = SearchEngine()
+    lat = []
+    long = []
+    for z in product_orders['Shipping Postal Code']:
+        info = search.by_zipcode(z)
+        lat.append(info.lat)
+        long.append(info.lng)      
+    product_orders['lat'] = pd.Series(lat)
+    product_orders['long'] = pd.Series(long)
+    product_orders
+    
+    #figure
+    fig2 = px.scatter_geo(product_orders, lat='lat', lon='long', 
+                         locationmode='USA-states',
+                         size='Sales ($)',
+                         color='Product Name',
+                         color_discrete_sequence=px.colors.qualitative.Set3,
+                         title='Product Sales ($) by zipcode',
+                         hover_data=['Shipping Postal Code'],
+                         scope='usa',
+                         opacity=0.8)
+    
+    # add border around scatter dots
+    fig2.update_traces(marker=dict(line=dict(width=0.5,
+                                            color='DarkSlateGrey')))
+    # Remove =
+    fig2.for_each_trace(
+            lambda trace: trace.update(name=trace.name.replace("Product Name=", "")),
+    )
+    
+    fig2.update_layout(
+        legend=go.layout.Legend(
+                font=dict(
+                    size=14,
+                ),
+                traceorder="normal",
+                itemsizing='constant'
+        ),
+        legend_orientation="h",
+        titlefont=dict(size=20),
+        margin=go.layout.Margin(
+            l=0,
+            r=0,
+            b=0,
+            t=50,
+            pad=4
+        ),
+    )
+    
+    return fig1,fig2
+
+
+# Create sales map figures
+@app.callback([Output('sales-map', 'figure'),
+               Output('product-sales-map', 'figure')],
+              [Input('filtered-dataframe', 'children')])
+def update_sales_maps(json_data):
+    if json_data is not None:
+        return generate_sales_maps(pd.read_json(json_data))
+    else:
+        return {},{}
+
+
+## Create/adjust sales/orders figures based on change in input
 @app.callback([Output('sales-graph', 'figure'),
                Output('orders-graph', 'figure')],
               [Input('sales-checkbox','value'),
@@ -459,7 +586,7 @@ def revenue_table(df):
       go.Table(
         header=dict(values=list(all_prods.columns),
                     align='left',
-                    font=dict(size=15)),
+                    font=dict(size=16)),
         cells=dict(
             values=all_prods.values.transpose(),
             align='left',
@@ -471,7 +598,7 @@ def revenue_table(df):
       go.Table(
         header=dict(values=list(mnth_prods.columns),
                     align='left',
-                    font=dict(size=15)),
+                    font=dict(size=16)),
         cells=dict(
             values=mnth_prods.values.transpose(),
             align='left',
@@ -484,7 +611,7 @@ def revenue_table(df):
       go.Table(
         header=dict(values=list(mnths3_prods.columns),
                     align='left',
-                    font=dict(size=15)),
+                    font=dict(size=16)),
         cells=dict(
             values=mnths3_prods.values.transpose(),
             align='left',
@@ -497,7 +624,7 @@ def revenue_table(df):
       go.Table(
         header=dict(values=list(yr_prods.columns),
                     align='left',
-                    font=dict(size=15)),
+                    font=dict(size=16)),
         cells=dict(
             values=yr_prods.values.transpose(),
             align='left',
