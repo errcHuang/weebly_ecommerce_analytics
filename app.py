@@ -407,7 +407,8 @@ def display_orders(df, scale_str, display_promo=False):
 
 def generate_sales_maps(df):
     single_orders = df.drop_duplicates('Order #').reset_index(drop=True)
-    single_orders = single_orders.groupby(['Shipping Postal Code'], as_index=False).sum()
+    single_orders = single_orders.groupby(['Shipping Postal Code', 'Shipping City'], 
+                                          as_index=False).sum()
     
     zips = single_orders['Shipping Postal Code'].astype(int).astype(str)
     
@@ -432,6 +433,7 @@ def generate_sales_maps(df):
                          color_continuous_scale='OrRd',
                          title='Sales excluding shipping ($) by zipcode',
                          hover_data=['Shipping Postal Code'],
+                         hover_name='Shipping City',
                          scope='usa')
     
     fig1.update_traces(
@@ -459,7 +461,7 @@ def generate_sales_maps(df):
     filled_df = df.fillna(method='ffill')
     zipcodes = filled_df['Shipping Postal Code'].astype(int).astype(str)
     order2zip = dict(zip( filled_df['Order #'], zipcodes)) #could potentially use this for re-adding dates back to orders hm
-    product_orders = filled_df.groupby(['Order #','Product Name'], as_index=False).sum()
+    product_orders = filled_df.groupby(['Order #','Product Name', 'Shipping City'], as_index=False).sum()
     product_orders["Shipping Postal Code"] = product_orders["Order #"].map(order2zip)
     
     
@@ -483,6 +485,7 @@ def generate_sales_maps(df):
                          color_discrete_sequence=px.colors.qualitative.Set3,
                          title='Product Sales ($) by zipcode',
                          hover_data=['Shipping Postal Code'],
+                         hover_name='Shipping City',
                          scope='usa',
                          opacity=0.8)
     
@@ -771,6 +774,7 @@ def parse_file(contents, filename):
         # Processing the file
         df['Date'] = pd.to_datetime(df['Date']) # add datetime formatting
         df['Shipping Email'] = df['Shipping Email'].str.lower() #converting to lower case
+        df['Shipping City'] = df['Shipping City'].str.title()
         df = df.rename(columns={"Product Total Price": "Sales ($)"}) #rename column 
         
         return df.to_json(date_format='iso'), 'uploaded %s' % filename
