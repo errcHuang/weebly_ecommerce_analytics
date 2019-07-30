@@ -16,7 +16,9 @@ If you want to immediately use the tool without any installation, use the instru
 
 2. Go to the [live demo](https://weeblyanalytics.herokuapp.com/) of the app and upload your CSV file there. The demo is hosted for free on Heroku, so be prepared to wait 15-20 seconds for the webpage to load.
 
-**Note**: No user order data is or will ever be stored on the server. Your data belongs to you. If you refresh or exit the page, you will have to re-upload your store data to construct the graphs again.**
+**Note**: No user order data is or will ever be stored on the server. Your data belongs to you. 
+
+If you refresh or exit the page, you will have to re-upload your store data to construct the graphs again.
 
 ## Installation (for offline use/modification)
 
