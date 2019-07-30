@@ -1,6 +1,6 @@
-# Weebly e-Commerce Analytics 
+# Weebly e-Commerce Analytics (WeA)
 
-**_Weebly e-Commerce Analytics is a web-based dashboard for product-oriented, customer-focused data analysis of your Weebly store sales._**
+**_WeA is a web-based dashboard for product-oriented, customer-focused data analysis of your Weebly store sales._**
 
 Built using [Dash](https://github.com/plotly/dash), Weebly e-Commerce Analytics offers a minimalist UI that enables easy insight into your Weebly store's order data, beyond [Weebly Insights](https://www.weebly.com/home/insights).
 
