@@ -1,4 +1,4 @@
-# weebly_ecommerce_analytics
+# Weebly e-Commerce analytics web app
 This Dash web app allows you to analyze your Weebly e-commerce store's [order data](https://www.weebly.com/editor/main.php#/store/orders).
 
 # Installation and Running
