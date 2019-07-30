@@ -29,13 +29,13 @@ def indicator(text, value):
                 className="twelve columns",
                 style={'text-align': 'center', 
                        'float': 'left',
-                       'font-size': '15px'}
+                       'font-size': '20px'}
             ),
             html.P(
                 value, ##
                 style={'text-align':'center',
                        'color': '#2a3f5f',
-                       'font-size': '35px'}
+                       'font-size': '32px'}
             ),
         ],
         className="four columns",
@@ -61,7 +61,7 @@ app.layout = html.Div(children=[
    html.Div([
     dcc.Markdown('Upload CSV file of Weebly orders below',
                  style={'textAlign':'center', 'font-size': '20px'}),
-    dcc.Markdown("*Don't know where that is? [Download here](https://www.weebly.com/editor/main.php#/store/orders) by clicking \"Export Orders\"*",
+    dcc.Markdown("*Don't know where that is? Go to [this page](https://www.weebly.com/editor/main.php#/store/orders) and click \"Export Orders\"*",
                  style={'textAlign':'center', 'font-size': '16px'}),
     
     dcc.Upload(
@@ -77,13 +77,14 @@ app.layout = html.Div(children=[
             'borderStyle': 'dashed',
             'borderRadius': '5px',
             'textAlign': 'center',
-            'margin': '10px'
+            'margin': '10px',
+            'background-color': 'white'
         },
     ),
     html.P(id='filename',
            style={'textAlign':'center', 'font-style':'italic'}),
     html.Hr()
-   ]),
+   ], style={'background-color':'rgba(220,220,220,0.3)'}),
     
    ## Header ##
    html.Div([  
@@ -91,6 +92,35 @@ app.layout = html.Div(children=[
                   style=dict(color='black'))
     ],
     className='row header'
+   ),
+    
+   # advanced filtering
+   html.Div([
+       html.Div([
+           dcc.DatePickerRange(
+               id='sales-datepickerrange',
+               #min_date_allowed = dt.today(),
+               #max_date_allowed = dt.today(),
+               #start_date = min_date,
+               #end_date = max_date,
+               start_date_placeholder_text='Orders from',
+               end_date_placeholder_text='Orders until',
+               day_size=45,
+               #with_portal=True
+               )
+           ],
+           className='three columns',
+           style={'float':'left',
+                  'display':'inline-block'}
+       ),
+      html.Div([
+        dcc.Markdown('**Advanced filtering**: \n'
+                     'Compute below results for orders ONLY between the two dates. (*Selects all dates by default*)'),
+        #dcc.Markdown('Compute below results for orders ONLY between the two dates. (*Selects all dates by default*)')
+      ], className='four columns'),
+    
+    
+   ], className='row'
    ),
    
    dcc.Tabs(id='tabs', children=[
@@ -104,19 +134,20 @@ app.layout = html.Div(children=[
                         dcc.Dropdown(
                             id='sales-time-dropdown',
                             options=[
-                                {'label': 'View data by month', 'value':'Monthly'},
-                                {'label': 'View data by week', 'value':'Weekly'},
-                                {'label': 'View data by day', 'value':'Daily'}
+                                {'label': 'By month', 'value':'Monthly'},
+                                {'label': 'By week', 'value':'Weekly'},
+                                {'label': 'By day', 'value':'Daily'}
                             ],
                             value='Monthly',
-                            searchable=False
+                            searchable=False,
+                            style={'font-size':'20px'}
                         )
                     ], className='four columns'),
                 ], 
                 className='row'
                 ),
                 
-                html.Hr(),
+                html.Br(),
                    
                 # indicators row
                 html.Div(id='sales-indicators',
@@ -132,29 +163,37 @@ app.layout = html.Div(children=[
                                 {'label':'View sales by product','value':'y'}
                         ],
                         value=[],
-                        style={'width':'98%', 'display': 'inline-block', 'font-size': '20px'}
+                        style={'display': 'inline-block',
+                               'font-size': '20px',
+                               'margin-left': '2.5%'}
                     ),
-                ], className='row'),
-                
-                # graphs
-                html.Div([
-                    dcc.Graph(id='sales-graph')        
-                ], className='row'),
                     
-                html.Div([
                     dcc.Checklist(
                         id='orders-checkbox',
                         options=[
                                 {'label':'View orders by coupon use','value':'y'},
                         ],
                         value=[],
-                        style={'width':'98%', 'display': 'inline-block', 'font-size': '20px'}
+                        style={'display': 'inline-block', 
+                               'font-size': '20px',
+                               'float': 'right',
+                               'margin-right': '2.5%'}
                     )
-                ], className='row'),
-            
+                ], 
+                className='row'),
+                
+                # graphs
                 html.Div([
-                    dcc.Graph(id='orders-graph')
+                    dcc.Graph(id='sales-graph',
+                              style={'display':'inline-block'}),
+                    dcc.Graph(id='orders-graph',
+                              style={'display':'inline-block'})
                 ], className='row'),
+
+            
+                #html.Div([
+                #    dcc.Graph(id='orders-graph')
+                #], className='row'),
                 
                 #table
                 html.Div([
@@ -162,34 +201,24 @@ app.layout = html.Div(children=[
                 ], className='row')
             ]),
            
-           dcc.Tab(id='customer-tab', label='Customer')
+           ## TAB 2 ##
+           dcc.Tab(id='customer-tab', label='Customer', children=[
+                html.Br(),
+                # indicators row
+                html.Div(id='customer-indicators',
+                className='row'),
+                
+                html.Br(),
+                
+                # histograms
+                html.Div([
+                    dcc.Graph(id='dollars-histogram')
+                ]),
+                   
+           ])
    ], style={'font-size': 'large'}),
                         
-   html.Hr(),
-
-   # date selector
-   html.Div([
-       html.Div([
-           dcc.DatePickerRange(
-               id='sales-datepickerrange',
-               #min_date_allowed = dt.today(),
-               #max_date_allowed = dt.today(),
-               #start_date = min_date,
-               #end_date = max_date,
-               start_date_placeholder_text='Orders from',
-               end_date_placeholder_text='Orders until',
-               day_size=45
-               )
-           ],
-           className='three columns',
-           style={'float':'left'}
-       ),
-      html.Div([
-        dcc.Markdown('**Advanced filtering**'),
-        dcc.Markdown('Compute above results for orders ONLY between the two dates. (*Selects all dates by default*)')
-      ], className='four columns'),
-   ], className='row'
-   )
+   #html.Hr(),
    
   ]
 )
@@ -227,7 +256,7 @@ def display_sales(df, scale_str, display_product=False):
 
         #add shipping price to the category
         shipping_price = df.groupby(['Date'], as_index=False)['Shipping Price'].sum()
-        pivoted_sales['Shipping'] = shipping_price['Shipping Price']
+        pivoted_sales.loc[:,'Shipping'] = shipping_price['Shipping Price']
         column_names = np.append(column_names,'Shipping')
 
         fig = px.bar(resample_sales(pivoted_sales, scale_str[0], True), x='Date', y='Sales ($)', 
@@ -236,7 +265,7 @@ def display_sales(df, scale_str, display_product=False):
                      color_discrete_sequence=category20)
     else: #just show aggregate
         daily_sales = df.groupby('Date', as_index=False)['Subtotal','Shipping Price'].sum()
-        daily_sales['Sales ($)'] = daily_sales['Subtotal'] + daily_sales['Shipping Price']
+        daily_sales.loc[:,'Sales ($)'] = daily_sales.loc[:,'Subtotal'] + daily_sales.loc[:,'Shipping Price']
         daily_sales = resample_sales(daily_sales, scale_str[0])
         fig = px.bar(daily_sales, x='Date', y='Sales ($)', title='%s Overall Sales' % scale_str)
         fig.update_traces(marker_color='rgb(158,202,225)')
@@ -271,8 +300,17 @@ def display_sales(df, scale_str, display_product=False):
             ),
             type="date"
         ),
-        plot_bgcolor='rgba(211,211,211,0.35)'
+        plot_bgcolor='rgba(211,211,211,0.35)',
+        legend=go.layout.Legend(
+            font=dict(
+                size=14,
+            )
+        ),
+        titlefont=dict(size=20)
     )
+    fig.update_xaxes(tickfont=dict(size=15.5))
+    fig.update_yaxes(tickfont=dict(size=15.5), title_font=dict(size=20))
+                    
     fig.for_each_trace(
         lambda trace: trace.update(name=trace.name.replace("Product Name=", "")),
     )
@@ -304,24 +342,13 @@ def display_orders(df, scale_str, display_promo=False):
     
     
     if display_promo == True:
-        fig = px.bar(resample_orders(orders, scale_str[0], True), x='Date', y='# of orders', color='Order type')
-        fig.update_layout(
-            title=go.layout.Title(
-                text="# of %s Orders by order type" % scale_str,
-                xref="paper",
-                x=0
-            )
-        )
+        fig = px.bar(resample_orders(orders, scale_str[0], True), 
+                     x='Date', y='# of orders', color='Order type',
+                     title="# of %s Orders by order type" % scale_str)
 
     else: #just show aggregate  
-        fig = px.bar(resample_orders(orders,scale=scale_str[0]), x='Date', y='Total')
-        fig.update_layout(
-            title=go.layout.Title(
-                text="Total Number of Daily Orders",
-                xref="paper",
-                x=0
-            )
-        )
+        fig = px.bar(resample_orders(orders,scale=scale_str[0]), x='Date', y='Total',
+                     title="Total Number of %s Orders" % scale_str)
         fig.update_yaxes(title='# of orders')
 
 
@@ -355,8 +382,18 @@ def display_orders(df, scale_str, display_promo=False):
             ),
             type="date"
         ),
-        plot_bgcolor='rgba(211,211,211,0.35)'
+        plot_bgcolor='rgba(211,211,211,0.35)',
+        legend=go.layout.Legend(
+            font=dict(
+                size=14,
+            )
+        ),
+        titlefont=dict(size=20)
     )
+                    
+    fig.update_xaxes(tickfont=dict(size=15.5))
+    fig.update_yaxes(tickfont=dict(size=15.5), title_font=dict(size=20))
+    
     fig.for_each_trace(
         lambda trace: trace.update(name=trace.name.replace("Order type=", "")),
     )
@@ -412,29 +449,33 @@ def revenue_table(df):
         return prods
     
     all_prods = generate_prods(df)
-    mnth_prods = generate_prods(df.loc[(df['Date'] > mnth) & (df['Date'] <=today)])
-    mnths3_prods = generate_prods(df.loc[(df['Date'] > mnths3) & (df['Date'] <=today)])
-    yr_prods = generate_prods(df.loc[(df['Date'] > yr) & (df['Date'] <=today)])
+    mnth_prods = generate_prods(df.loc[(df['Date'] >= mnth) & (df['Date'] <=today)])
+    mnths3_prods = generate_prods(df.loc[(df['Date'] >= mnths3) & (df['Date'] <=today)])
+    yr_prods = generate_prods(df.loc[(df['Date'] >= yr) & (df['Date'] <=today)])
     
     fig = go.Figure()
     
     fig.add_trace(
       go.Table(
         header=dict(values=list(all_prods.columns),
-                    align='left'),
+                    align='left',
+                    font=dict(size=15)),
         cells=dict(
             values=all_prods.values.transpose(),
-            align='left'),
+            align='left',
+            font=dict(size=14)),
       )
     )
     
     fig.add_trace(
       go.Table(
         header=dict(values=list(mnth_prods.columns),
-                    align='left'),
+                    align='left',
+                    font=dict(size=15)),
         cells=dict(
             values=mnth_prods.values.transpose(),
-            align='left'),
+            align='left',
+            font=dict(size=14)),
         visible=False
       )
     )
@@ -442,10 +483,12 @@ def revenue_table(df):
     fig.add_trace(
       go.Table(
         header=dict(values=list(mnths3_prods.columns),
-                    align='left'),
+                    align='left',
+                    font=dict(size=15)),
         cells=dict(
             values=mnths3_prods.values.transpose(),
-            align='left'),
+            align='left',
+            font=dict(size=14)),
         visible=False
       )
     )
@@ -453,15 +496,18 @@ def revenue_table(df):
     fig.add_trace(
       go.Table(
         header=dict(values=list(yr_prods.columns),
-                    align='left'),
+                    align='left',
+                    font=dict(size=15)),
         cells=dict(
             values=yr_prods.values.transpose(),
-            align='left'),
+            align='left',
+            font=dict(size=14)),
         visible=False
       )
     )
     
-    fig.update_layout(title="% of Total Revenue by Product - All to date")
+    fig.update_layout(title="% of Total Revenue by Product - All to date",
+                      titlefont=dict(size=20))
     
     fig.update_layout(
         updatemenus=[
@@ -485,9 +531,17 @@ def revenue_table(df):
                          args=[{"visible": [False, False, False, True]},
                                {"title": "% of Total Revenue by Product - Past 1 year"}]),
                 ]),
+                x=-0.0075,
+                font=dict(size=14)
             )
         ],
-        height = (len(yr_prods.values.transpose()[0]) + 2) * 40 + 0
+        margin=go.layout.Margin(
+            l=0,
+            r=10,
+            b=0,
+            t=50,
+            pad=4
+        ),
     )
 
     return fig
@@ -522,7 +576,7 @@ def update_df_figures(start_date, end_date, json_data):
         return [html.Div([
                 indicator('Avg daily sales', '$%.2f' % (filtered_df['Subtotal']+filtered_df['Shipping Price']).mean()),
                 indicator('Total sales', '$%.2f' % (filtered_df['Subtotal']+filtered_df['Shipping Price']).sum()),
-                indicator('# of orders', filtered_df['Order #'].count())
+                indicator('# of orders', len(filtered_df['Order #'].unique()))
                 ]), 
                 filtered_df.to_json(date_format='iso'),
                 revenue_table(filtered_df)]
