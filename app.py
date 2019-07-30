@@ -12,6 +12,7 @@ from uszipcode import SearchEngine
 
 import dateutil.parser
 import gender_guesser.detector as gender
+import functools
 
 import pandas as pd
 import numpy as np
@@ -93,7 +94,7 @@ app.layout = html.Div(children=[
     
    ## Header ##
    html.Div([  
-        html.H2("Vocé Tea Analytics" ,
+        html.H1("Vocé Tea Analytics" ,
                   style=dict(color='black'))
     ],
     className='row header'
