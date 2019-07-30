@@ -123,7 +123,7 @@ app.layout = html.Div(children=[
         dcc.Markdown('**Advanced filtering**: \n'
                      'Compute below results for orders ONLY between the two dates. (*Selects all dates by default*)'),
         #dcc.Markdown('Compute below results for orders ONLY between the two dates. (*Selects all dates by default*)')
-      ], className='four columns'),
+      ], className='three columns'),
     
     
    ], className='row'
