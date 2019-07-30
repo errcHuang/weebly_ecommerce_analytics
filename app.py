@@ -12,7 +12,6 @@ from uszipcode import SearchEngine
 
 import dateutil.parser
 import gender_guesser.detector as gender
-import functools
 
 import pandas as pd
 import numpy as np
@@ -94,7 +93,7 @@ app.layout = html.Div(children=[
     
    ## Header ##
    html.Div([  
-        html.H1("Vocé Tea Analytics" ,
+        html.H1("Weebly eCommerce Analytics" ,
                   style=dict(color='black'))
     ],
     className='row header'
@@ -102,6 +101,16 @@ app.layout = html.Div(children=[
     
    # advanced filtering
    html.Div([
+       html.Div([
+               dcc.Markdown('''
+                      **Sales** provides insights into your sales from a 
+                      product and geographical level. 
+                      
+                      **Customer** displays metrics about customer demographics 
+                      and spending behavior.
+                      ''')
+        
+       ], className='six columns'),
        html.Div([
            dcc.DatePickerRange(
                id='sales-datepickerrange',
@@ -204,7 +213,7 @@ app.layout = html.Div(children=[
                               style={'display':'inline-block'})
                 ], className='row'),
                     
-                html.Hr(),
+                #html.Hr(),
 
                 #table
                 html.Div([
@@ -238,7 +247,7 @@ app.layout = html.Div(children=[
                 style={'margin':'auto',
                        'float':'center'}),
                     
-                html.Hr(),
+                html.Br(),
                 
                 html.Div([
                     dcc.Graph(id='spenders-table'),
@@ -250,7 +259,16 @@ app.layout = html.Div(children=[
            ])
    ], style={'font-size': '24px'}),
                         
-   #html.Hr(),
+   html.Hr(),
+   html.Div([
+       html.P(['Documentation/source ',
+               html.A('here.', href='https://github.com/errcHuang/weebly_ecommerce_analytics/blob/master/README.md'),
+               ' Contact ', html.A('me.', href='mailto:eric.huanghg@gmail.com')],
+              style={'color':'#A9A9A9',
+                     'font-size': '16px'})
+   ], 
+   style={
+          'text-align':'center'})
    
   ]
 )
@@ -448,7 +466,7 @@ def spenders_table(df):
     fig.update_layout(title="Top Customers by Sales ($)",
                       titlefont=dict(size=20),
                       margin=go.layout.Margin(
-                        l=20,
+                        l=40,
                         r=20,
                         b=0,
                         t=50,
