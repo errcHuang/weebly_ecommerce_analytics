@@ -24,36 +24,7 @@ app = dash.Dash(__name__,
                 external_stylesheets=external_stylesheets)
 server = app.server
 
-# indicator box  
-def indicator(text, value):
-    return html.Div(
-        [
-            
-            html.P(
-                text,
-                className="twelve columns",
-                style={'text-align': 'center', 
-                       'float': 'left',
-                       'font-size': '20px'}
-            ),
-            html.P(
-                value, ##
-                style={'text-align':'center',
-                       'color': '#2a3f5f',
-                       'font-size': '30px'}
-            ),
-        ],
-        className="four columns",
-        style={
-                'border':'1px solid #C8D4E3',
-                'border-radius': '3px',
-                'background-color': 'white',
-                'height':'100px',
-                'vertical-align':'middle',
-              }
-        
-    )
-
+### LAYOUT OF APP ##
 
 app.layout = html.Div(children=[
    ## hidden div storing dataframes ##
@@ -61,9 +32,8 @@ app.layout = html.Div(children=[
    html.Div(id='filtered-dataframe', style={'display':'none'}),
    #html.Div(id='filtered-dataframe'),
 
-   
-   ## Upload ##
-   html.Div([
+   #UPLOAD COMPONENT
+   html.Div(id='upload-div', children=[
     dcc.Markdown('Upload CSV file of Weebly orders below',
                  style={'textAlign':'center', 'font-size': '20px'}),
     dcc.Markdown("*Don't know where that is? Go to [this page](https://www.weebly.com/editor/main.php#/store/orders) and click \"Export Orders\"*",
@@ -89,8 +59,11 @@ app.layout = html.Div(children=[
     html.P(id='filename',
            style={'textAlign':'center', 'font-style':'italic'}),
     html.Hr()
-   ], style={'background-color':'rgba(220,220,220,0.3)'}),
-    
+   ], 
+   style={'background-color':'rgba(220,220,220,0.3)',
+          'display':'block',
+          'margin-bottom': '0px'}),
+
    ## Header ##
    html.Div([  
         html.H1("Weebly eCommerce Analytics" ,
@@ -137,6 +110,8 @@ app.layout = html.Div(children=[
     
    ], className='row'
    ),
+               
+   html.Br(),
    
    dcc.Tabs(id='tabs', children=[
            ## Tab 1 (Sales) ##
@@ -262,281 +237,67 @@ app.layout = html.Div(children=[
    html.Hr(),
    html.Div([
        html.P(['Documentation/source ',
-               html.A('here.', href='https://github.com/errcHuang/weebly_ecommerce_analytics/blob/master/README.md'),
-               ' Contact ', html.A('me.', href='mailto:eric.huanghg@gmail.com')],
+               html.A('here.', href='https://github.com/errcHuang/weebly_ecommerce_analytics/blob/master/README.md')],
+               #' Contact ', html.A('me.', href='mailto:eric.huanghg@gmail.com')],
               style={'color':'#A9A9A9',
                      'font-size': '16px'})
    ], 
    style={
-          'text-align':'center'})
+          'text-align':'center'}),
+   html.Br(),
    
   ]
 )
-                    
-def dollars_histogram(df):
-    today = dt.today().strftime('%Y-%m-%d')
-    mnth = (dt.today() - timedelta(days=30)).strftime('%Y-%m-%d')
-    mnths3 = (dt.today() - timedelta(weeks=13)).strftime('%Y-%m-%d')
-    yr = (dt.today() - timedelta(weeks=52)).strftime('%Y-%m-%d')
 
-    def generate_spend(data):
-        ## From csv, returns dataframe with product name, Qty, Sales, % of Sales
-        prods = data.groupby(['Order #'], as_index=False).sum()
-        return prods
+### CONTENT CREATION FUNCTIONS ##
 
-    all_prods = generate_spend(df)
-    mnth_prods = generate_spend(df.loc[(df['Date'] >= mnth) & (df['Date'] <=today)])
-    mnths3_prods = generate_spend(df.loc[(df['Date'] >= mnths3) & (df['Date'] <=today)])
-    yr_prods = generate_spend(df.loc[(df['Date'] >= yr) & (df['Date'] <=today)])
-    
-    fig = go.Figure()
-    
-    fig.add_trace(
-      go.Histogram(x=all_prods['Subtotal']+all_prods['Shipping Price'])
-    )
-    
-    fig.add_trace(
-      go.Histogram(x=mnth_prods['Subtotal']+mnth_prods['Shipping Price'],
-      visible=False)
-    )
-    
-    
-    fig.add_trace(
-      go.Histogram(x=mnths3_prods['Subtotal']+mnths3_prods['Shipping Price'],
-      visible=False)
-    )
-    
-    
-    fig.add_trace(
-      go.Histogram(x=yr_prods['Subtotal']+yr_prods['Shipping Price'],
-      visible=False)
-    )
-    
-    fig.update_layout(title="Dollars ($) spent per order - All orders to date",
-                      xaxis=dict(title='Dollars ($) spent per order'),
-                      yaxis=dict(title='# of customers'))
-    
-    fig.update_layout(
-        updatemenus=[
-            go.layout.Updatemenu(
-                active=0,
-                buttons=list([
-                    dict(label="All",
-                         method="update",
-                         args=[{"visible": [True, False, False, False]},
-                               {"title": "Dollars ($) spent per order - All orders to date"}]),
-                    dict(label="1m",
-                         method="update",
-                         args=[{"visible": [False, True, False, False]},
-                               {"title": "Dollars ($) spent per order - Orders from past month"}]),
-                    dict(label="3m",
-                         method="update",
-                         args=[{"visible": [False, False, True, False]},
-                               {"title": "Dollars ($) spent per order - Orders from past 3 months"}]),
-                    dict(label="1yr",
-                         method="update",
-                         args=[{"visible": [False, False, False, True]},
-                               {"title": "Dollars ($) spent per order - Orders from past year"}]),
-                ]),
-                font=dict(size=14),
-                x=-0.055
-            )
+# Output: HTML element that displays a box
+#         with some KPI and an annotation above it
+# Input:  text: a string
+#         value: either a string or number
+def indicator(text, value):
+    return html.Div(
+        [
+            
+            html.P(
+                text,
+                className="twelve columns",
+                style={'text-align': 'center', 
+                       'float': 'left',
+                       'font-size': '20px'}
+            ),
+            html.P(
+                value, ##
+                style={'text-align':'center',
+                       'color': '#2a3f5f',
+                       'font-size': '30px'}
+            ),
         ],
-        titlefont=dict(size=20)
-    )
-    fig.update_traces(marker_color='rgb(158,202,225)')
-    
-    fig.update_xaxes(tick0=0, tickfont=dict(size=15.5), title_font=dict(size=20))
-    fig.update_yaxes(tickfont=dict(size=15.5), title_font=dict(size=20))
-    
-    #avg spend/order
-    avg = (all_prods.loc[:,'Subtotal'] + all_prods.loc[:,'Shipping Price']).mean() 
-    
-    return fig,avg
-
-def orders_histogram(df):
-    today = dt.today().strftime('%Y-%m-%d')
-    mnth = (dt.today() - timedelta(days=30)).strftime('%Y-%m-%d')
-    mnths3 = (dt.today() - timedelta(weeks=13)).strftime('%Y-%m-%d')
-    yr = (dt.today() - timedelta(weeks=52)).strftime('%Y-%m-%d')
-
-    def generate_orders(data):
-        ## From csv, returns dataframe with product name, Qty, Sales, % of Sales
-        prods = data.groupby(['Shipping Email', 'Shipping Postal Code','Shipping Region'], as_index=False)['Order #'].count().sort_values(by='Order #', ascending=False)
-        return prods
-
-    all_prods = generate_orders(df)
-    mnth_prods = generate_orders(df.loc[(df['Date'] >= mnth) & (df['Date'] <=today)])
-    mnths3_prods = generate_orders(df.loc[(df['Date'] >= mnths3) & (df['Date'] <=today)])
-    yr_prods = generate_orders(df.loc[(df['Date'] >= yr) & (df['Date'] <=today)])
-    
-    fig = go.Figure()
-    
-    fig.add_trace(
-      go.Histogram(x=all_prods['Order #'])
-    )
-    
-    fig.add_trace(
-      go.Histogram(x=mnth_prods['Order #'],
-      visible=False)
-    )
-    
-    
-    fig.add_trace(
-      go.Histogram(x=mnths3_prods['Order #'],
-      visible=False)
-    )
-    
-    
-    fig.add_trace(
-      go.Histogram(x=yr_prods['Order #'],
-      visible=False)
-    )
-    
-    fig.update_layout(title="# of orders per customer - All orders to date",
-                      xaxis=dict(title='# of orders'),
-                      yaxis=dict(title='# of customers'))
-    
-    fig.update_layout(
-        updatemenus=[
-            go.layout.Updatemenu(
-                active=0,
-                buttons=list([
-                    dict(label="All",
-                         method="update",
-                         args=[{"visible": [True, False, False, False]},
-                               {"title": "# of orders per customer - All orders to date"}]),
-                    dict(label="1m",
-                         method="update",
-                         args=[{"visible": [False, True, False, False]},
-                               {"title": "# of orders per customer - Orders from past month"}]),
-                    dict(label="3m",
-                         method="update",
-                         args=[{"visible": [False, False, True, False]},
-                               {"title": "# of orders per customer - Orders from past 3 months"}]),
-                    dict(label="1yr",
-                         method="update",
-                         args=[{"visible": [False, False, False, True]},
-                               {"title": "# of orders per customer - Orders from past year"}]),
-                ]),
-                font=dict(size=14),
-                x=-0.055
-            )
-        ],
-        titlefont=dict(size=20)
-    )
-    
-    fig.update_xaxes(tick0=0, dtick=1, tickfont=dict(size=15.5), title_font=dict(size=20))
-    fig.update_yaxes(tickfont=dict(size=15.5), title_font=dict(size=20))
-    
-    avg = all_prods['Order #'].mean() #avg orders per cust
-    
-    return fig, avg
-
-def spenders_table(df):
-    ## TOP SPENDERS
-    top_spenders = df.groupby(['Shipping First Name', 'Shipping Last Name','Shipping Email','Shipping City','Shipping Region'], as_index=False).sum().sort_values(by='Subtotal', ascending=False)
-    top_spenders['Total Sales ($)'] = top_spenders.loc[:,'Subtotal']+top_spenders.loc[:,'Shipping Price']
-    top_spenders = top_spenders.round(2)
-    top_spenders = top_spenders.rename(columns={'Shipping Region':'State',
-                                 'Shipping Email':'Email', 
-                                 'Shipping City':'City',
-                                 'Shipping First Name':'First Name',
-                                 'Shipping Last Name':'Last Name'})
-    top_spenders = top_spenders[['First Name', 'Last Name', 'Email', 'City','State','Total Sales ($)']]
-    fig = go.Figure()
-    
-    fig.add_trace(
-      go.Table(
-        columnwidth=[60,60,120,60,40,60, 40],
-        header=dict(values=list(top_spenders.columns),
-                    align='left',
-                    font=dict(size=16)
-                   ),
-        cells=dict(
-            values=top_spenders.values.transpose(),
-            align='left',
-            fill=dict(color=['rgba(220,220,220,0.3)','rgba(220,220,220,0.3)','rgba(220,220,220,0.3)','rgba(220,220,220,0.3)','rgba(220,220,220,0.3)',
-                             'lightyellow']),
-            font=dict(size=15)
-        ),
-      )
-    )
-    
-    fig.update_layout(title="Top Customers by Sales ($)",
-                      titlefont=dict(size=20),
-                      margin=go.layout.Margin(
-                        l=40,
-                        r=20,
-                        b=0,
-                        t=50,
-                        pad=4
-                      )
-    )
-                      
-    return fig
-
-def lifetime_histogram(df):
-    cust_df = df.groupby(['Shipping Email'], as_index=False).sum()
-    cust_df['Total Spending ($)'] = cust_df.loc[:,'Subtotal'] + cust_df.loc[:,'Shipping Price']
-    
-    fig = px.histogram(cust_df, x='Total Spending ($)')
-    
-    
-    fig.update_layout(title="Lifetime Customer Sales ($)",
-                      yaxis=dict(title='# of customers'),
-                      titlefont=dict(size=20)
-                     )
-    
-    fig.update_traces(marker_color='rgb(242,207,156)')
-    
-    fig.update_xaxes(tick0=0, tickfont=dict(size=15.5), title_font=dict(size=20))
-    fig.update_yaxes(tickfont=dict(size=15.5), title_font=dict(size=20))
-    
-    avg = cust_df['Total Spending ($)'].mean()
-    
-    return fig, avg
-
-                    
-# Create sales map figures
-@app.callback([Output('customer-indicators', 'children'),
-               Output('dollars-histogram', 'figure'),
-               Output('orders-histogram', 'figure'),
-               Output('spenders-table', 'figure'),
-               Output('lifetime-histogram', 'figure')],
-              [Input('filtered-dataframe', 'children')])
-def render_customer_tab(json_data):
-    if json_data is not None:
-        df = pd.read_json(json_data)
-        df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
-        df['Date'] = pd.to_datetime(df['Date'])
+        className="four columns",
+        style={
+                'border':'1px solid #C8D4E3',
+                'border-radius': '3px',
+                'background-color': 'white',
+                'height':'100px',
+                'vertical-align':'middle',
+              }
         
+    )
 
-        d_hist, avg_spend_order = dollars_histogram(df)
-        o_hist, avg_orders_cust = orders_histogram(df)
-        s_table = spenders_table(df)
-        l_hist, avg_cust_spend = lifetime_histogram(df)
-        
-        d = gender.Detector()
-        unique_emails = df.drop_duplicates(subset='Shipping Email')
-        first_names = unique_emails['Shipping First Name'].str.lower().dropna()
-        genders = [d.get_gender(str(i).capitalize()) for i in first_names]
-        gender_dict = dict(zip(*np.unique(genders,return_counts=True)))
-        
-        female_pct = (gender_dict['female']+gender_dict['mostly_female'])/(gender_dict['female']+gender_dict['mostly_female']+gender_dict['male']+gender_dict['mostly_male'])
-        female_pct = female_pct*100
-        
-        indicators = html.Div([
-            indicator('Avg lifetime spend / customer', '$%.2f' % avg_cust_spend),
-            indicator('Avg purchase / order', '$%.2f' % avg_spend_order),
-            indicator('% Female Customers', '%.1f%%' % female_pct)
-        ])
-        return indicators,d_hist,o_hist,s_table,l_hist
-    else:
-        return None,{},{},{},{}
-      
+## SALES TAB CONTENT
+
+# Output: fig: Plotly figure that shows bar chart of sales over time
+# Input:  df: pandas dataframe (ideally from filtered-dataframe div element)
+#         scale_str: string, either "Monthly" / "Daily" / "Weekly" for time scale
+#         display_product: boolean of whether to subdivide chart by product
 def display_sales(df, scale_str, display_product=False):
-    category20 = ["#b4ddd4", "#1c5b5a", "#66fcba", "#b31f59", "#46a26c", "#4443b4", "#dc8bfe", "#9525ba", "#2499d7", "#67486a", "#a8a2f4", "#3f16f9", "#efd453", "#7d4400", "#fec9af", "#af3007", "#fb899b", "#f6932e", "#9d8d88", "#fb57f9"]
+    #colors
+    category20 = ["#b4ddd4", "#1c5b5a", "#66fcba", "#b31f59", "#46a26c", "#4443b4", 
+                  "#dc8bfe", "#9525ba", "#2499d7", "#67486a", "#a8a2f4", "#3f16f9", 
+                  "#efd453", "#7d4400", "#fec9af", "#af3007", "#fb899b", "#f6932e", 
+                  "#9d8d88", "#fb57f9"]
+                  
+    # Change dataframe to daily, weekly, monthly
     def resample_sales(pivoted_orders, scale, to_process=False):
 
             pivoted_orders = pivoted_orders.resample(scale, on='Date').sum() ##ding ding ding
@@ -555,6 +316,7 @@ def display_sales(df, scale_str, display_product=False):
                                          value_name='Sales ($)')
             return pivoted_orders
         
+    # Subdivide data by product
     if display_product == True:
         product_sales = df.groupby(['Date','Product Name'], as_index=False)['Sales ($)'].sum()
         pivoted_sales = product_sales.pivot(index='Date', columns='Product Name').fillna(value=0)
@@ -615,10 +377,10 @@ def display_sales(df, scale_str, display_product=False):
         plot_bgcolor='rgba(211,211,211,0.35)',
         legend=go.layout.Legend(
             font=dict(
-                size=14,
+                size=13,
             )
         ),
-        titlefont=dict(size=20)
+        titlefont=dict(size=20),
     )
     fig.update_xaxes(tickfont=dict(size=15.5))
     fig.update_yaxes(tickfont=dict(size=15.5), title_font=dict(size=20))
@@ -628,12 +390,17 @@ def display_sales(df, scale_str, display_product=False):
     )
     return fig
 
+# Output: fig: Plotly figure that shows bar chart of # of orders over time
+# Input:  df: pandas dataframe (ideally from filtered-dataframe div element)
+#         scale_str: string, either "Monthly" / "Daily" / "Weekly" for time scale
+#         display_promo: boolean of whether to subdivide chart by coupon use
 def display_orders(df, scale_str, display_promo=False):
-    
+    # Preprocessing
     orders = df.drop_duplicates(subset='Order #').groupby('Date', as_index=False)['Order #', 'Coupon'].count()
     orders = orders.rename(columns={'Order #': 'Total', 'Coupon': 'Promo'}) 
     orders['Regular'] = np.subtract(orders['Total'], orders['Promo'])
     
+    # Resample to make daily, weekly, or monthly data
     def resample_orders(pivoted_orders, scale='D', display_promo=False):
 
         pivoted_orders = pivoted_orders.resample(scale, on='Date').sum() ##ding ding ding
@@ -652,7 +419,7 @@ def display_orders(df, scale_str, display_promo=False):
                                 value_name='# of orders')
         return pivoted_orders
     
-    
+    # Show division of orders by promo use
     if display_promo == True:
         fig = px.bar(resample_orders(orders, scale_str[0], True), 
                      x='Date', y='# of orders', color='Order type',
@@ -697,7 +464,7 @@ def display_orders(df, scale_str, display_promo=False):
         plot_bgcolor='rgba(211,211,211,0.35)',
         legend=go.layout.Legend(
             font=dict(
-                size=14,
+                size=15,
             )
         ),
         titlefont=dict(size=20)
@@ -711,7 +478,11 @@ def display_orders(df, scale_str, display_promo=False):
     )
     return fig
 
+# Output: fig1: Plotly figure that shows dots of sales mapped to US zipcodes
+#         fig2: Same as fig1 except subdivided by product
+# Input:  df: pandas dataframe (ideally from filtered-dataframe div element)
 def generate_sales_maps(df):
+    # Preprocessing for figure 1
     single_orders = df.drop_duplicates('Order #').reset_index(drop=True)
     single_orders = single_orders.groupby(['Shipping Postal Code', 'Shipping City'], 
                                           as_index=False).sum()
@@ -763,7 +534,8 @@ def generate_sales_maps(df):
             pad=4
         ),
     )
-            
+    
+    # Preprocessing for figure 2
     filled_df = df.fillna(method='ffill')
     zipcodes = filled_df['Shipping Postal Code'].astype(int).astype(str)
     order2zip = dict(zip( filled_df['Order #'], zipcodes)) #could potentially use this for re-adding dates back to orders hm
@@ -824,35 +596,8 @@ def generate_sales_maps(df):
     
     return fig1,fig2
 
-## Create/adjust sales/orders figures based on change in input
-@app.callback([Output('sales-graph', 'figure'),
-               Output('orders-graph', 'figure')],
-              [Input('sales-checkbox','value'),
-               Input('orders-checkbox', 'value'),
-               Input('sales-time-dropdown', 'value'),
-               Input('filtered-dataframe', 'children')])
-def update_sales_figures(sales_cb, orders_cb, timestep, json_data):
-    if json_data is not None:
-        df = pd.read_json(json_data)
-        df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
-        df['Date'] = pd.to_datetime(df['Date'])
-        
-        # Return figures depending on checkbox value
-        if sales_cb: #box is checked
-            sales_fig = display_sales(df, timestep, display_product=True)
-        else:
-            sales_fig = display_sales(df, timestep, display_product=False)
-        
-        if orders_cb:
-            orders_fig = display_orders(df, timestep, display_promo=True)
-        else:
-            orders_fig = display_orders(df, timestep, display_promo=False)
-        
-        return sales_fig, orders_fig
-    else:
-        return {},{}
-
-
+# Output: fig: Plotly figure that shows table of each product and its sales
+# Input:  df: pandas dataframe (ideally from filtered-dataframe div element)
 def revenue_table(df):
     today = dt.today().strftime('%Y-%m-%d')
     mnth = (dt.today() - timedelta(days=30)).strftime('%Y-%m-%d')
@@ -971,7 +716,319 @@ def revenue_table(df):
 
     return fig
 
-# filters dataframe based on start/end date and outputs new dataframe
+## CUSTOMER TAB CONTENT
+
+# Output: fig: Plotly figure that shows histogram of dollars spent per order
+#         avg: Float which is the average purchase ($) per order
+# Input:  df: pandas dataframe (ideally from filtered-dataframe div element)
+def dollars_histogram(df):
+    # Get dates
+    today = dt.today().strftime('%Y-%m-%d')
+    mnth = (dt.today() - timedelta(days=30)).strftime('%Y-%m-%d')
+    mnths3 = (dt.today() - timedelta(weeks=13)).strftime('%Y-%m-%d')
+    yr = (dt.today() - timedelta(weeks=52)).strftime('%Y-%m-%d')
+    
+    # Groupby spending
+    def generate_spend(data):
+        ## From csv, returns dataframe with product name, Qty, Sales, % of Sales
+        prods = data.groupby(['Order #'], as_index=False).sum()
+        return prods
+    
+    # Filter data
+    all_prods = generate_spend(df)
+    mnth_prods = generate_spend(df.loc[(df['Date'] >= mnth) & (df['Date'] <=today)])
+    mnths3_prods = generate_spend(df.loc[(df['Date'] >= mnths3) & (df['Date'] <=today)])
+    yr_prods = generate_spend(df.loc[(df['Date'] >= yr) & (df['Date'] <=today)])
+    
+    # Generate figure
+    fig = go.Figure()
+    
+    fig.add_trace(
+      go.Histogram(x=all_prods['Subtotal']+all_prods['Shipping Price'])
+    )
+    
+    fig.add_trace(
+      go.Histogram(x=mnth_prods['Subtotal']+mnth_prods['Shipping Price'],
+      visible=False)
+    )
+    
+    
+    fig.add_trace(
+      go.Histogram(x=mnths3_prods['Subtotal']+mnths3_prods['Shipping Price'],
+      visible=False)
+    )
+    
+    
+    fig.add_trace(
+      go.Histogram(x=yr_prods['Subtotal']+yr_prods['Shipping Price'],
+      visible=False)
+    )
+    
+    fig.update_layout(title="Dollars ($) spent per order - All orders to date",
+                      xaxis=dict(title='Dollars ($) spent per order'),
+                      yaxis=dict(title='# of customers'))
+    
+    fig.update_layout(
+        updatemenus=[
+            go.layout.Updatemenu(
+                active=0,
+                buttons=list([
+                    dict(label="All",
+                         method="update",
+                         args=[{"visible": [True, False, False, False]},
+                               {"title": "Dollars ($) spent per order - All orders to date"}]),
+                    dict(label="1m",
+                         method="update",
+                         args=[{"visible": [False, True, False, False]},
+                               {"title": "Dollars ($) spent per order - Orders from past month"}]),
+                    dict(label="3m",
+                         method="update",
+                         args=[{"visible": [False, False, True, False]},
+                               {"title": "Dollars ($) spent per order - Orders from past 3 months"}]),
+                    dict(label="1yr",
+                         method="update",
+                         args=[{"visible": [False, False, False, True]},
+                               {"title": "Dollars ($) spent per order - Orders from past year"}]),
+                ]),
+                font=dict(size=14),
+                x=-0.055
+            )
+        ],
+        titlefont=dict(size=20)
+    )
+    fig.update_traces(marker_color='rgb(158,202,225)')
+    
+    fig.update_xaxes(tick0=0, tickfont=dict(size=15.5), title_font=dict(size=20))
+    fig.update_yaxes(tickfont=dict(size=15.5), title_font=dict(size=20))
+    
+    #avg spend/order KPI
+    avg = (all_prods.loc[:,'Subtotal'] + all_prods.loc[:,'Shipping Price']).mean() 
+    
+    return fig,avg
+
+# Output: fig: Plotly figure that shows histogram of # of orders made per cust
+#         avg: Float which is the average # of orders per customer
+# Input:  df: pandas dataframe (ideally from filtered-dataframe div element)
+def orders_histogram(df):
+    # Get dates
+    today = dt.today().strftime('%Y-%m-%d')
+    mnth = (dt.today() - timedelta(days=30)).strftime('%Y-%m-%d')
+    mnths3 = (dt.today() - timedelta(weeks=13)).strftime('%Y-%m-%d')
+    yr = (dt.today() - timedelta(weeks=52)).strftime('%Y-%m-%d')
+    
+    #Groupby orders
+    def generate_orders(data):
+        ## From csv, returns dataframe with product name, Qty, Sales, % of Sales
+        prods = data.groupby(['Shipping Email', 'Shipping Postal Code','Shipping Region'], as_index=False)['Order #'].count().sort_values(by='Order #', ascending=False)
+        return prods
+    
+    # Filtered data frames
+    all_prods = generate_orders(df)
+    mnth_prods = generate_orders(df.loc[(df['Date'] >= mnth) & (df['Date'] <=today)])
+    mnths3_prods = generate_orders(df.loc[(df['Date'] >= mnths3) & (df['Date'] <=today)])
+    yr_prods = generate_orders(df.loc[(df['Date'] >= yr) & (df['Date'] <=today)])
+    
+    # Generate figures
+    fig = go.Figure()
+    
+    fig.add_trace(
+      go.Histogram(x=all_prods['Order #'])
+    )
+    
+    fig.add_trace(
+      go.Histogram(x=mnth_prods['Order #'],
+      visible=False)
+    )
+    
+    
+    fig.add_trace(
+      go.Histogram(x=mnths3_prods['Order #'],
+      visible=False)
+    )
+    
+    
+    fig.add_trace(
+      go.Histogram(x=yr_prods['Order #'],
+      visible=False)
+    )
+    
+    fig.update_layout(title="# of orders per customer - All orders to date",
+                      xaxis=dict(title='# of orders'),
+                      yaxis=dict(title='# of customers'))
+    
+    fig.update_layout(
+        updatemenus=[
+            go.layout.Updatemenu(
+                active=0,
+                buttons=list([
+                    dict(label="All",
+                         method="update",
+                         args=[{"visible": [True, False, False, False]},
+                               {"title": "# of orders per customer - All orders to date"}]),
+                    dict(label="1m",
+                         method="update",
+                         args=[{"visible": [False, True, False, False]},
+                               {"title": "# of orders per customer - Orders from past month"}]),
+                    dict(label="3m",
+                         method="update",
+                         args=[{"visible": [False, False, True, False]},
+                               {"title": "# of orders per customer - Orders from past 3 months"}]),
+                    dict(label="1yr",
+                         method="update",
+                         args=[{"visible": [False, False, False, True]},
+                               {"title": "# of orders per customer - Orders from past year"}]),
+                ]),
+                font=dict(size=14),
+                x=-0.055
+            )
+        ],
+        titlefont=dict(size=20)
+    )
+    
+    fig.update_xaxes(tick0=0, dtick=1, tickfont=dict(size=15.5), title_font=dict(size=20))
+    fig.update_yaxes(tickfont=dict(size=15.5), title_font=dict(size=20))
+    
+    avg = all_prods['Order #'].mean() #avg orders per cust
+    
+    return fig, avg
+
+# Output: fig: Plotly figure that shows table of top spending customers + info
+# Input:  df: pandas dataframe (ideally from filtered-dataframe div element)
+def spenders_table(df):
+    ## TOP SPENDERS
+    top_spenders = df.groupby(['Shipping First Name', 'Shipping Last Name','Shipping Email','Shipping City','Shipping Region'], as_index=False).sum().sort_values(by='Subtotal', ascending=False)
+    top_spenders['Total Sales ($)'] = top_spenders.loc[:,'Subtotal']+top_spenders.loc[:,'Shipping Price']
+    top_spenders = top_spenders.round(2)
+    top_spenders = top_spenders.rename(columns={'Shipping Region':'State',
+                                 'Shipping Email':'Email', 
+                                 'Shipping City':'City',
+                                 'Shipping First Name':'First Name',
+                                 'Shipping Last Name':'Last Name'})
+    top_spenders = top_spenders[['First Name', 'Last Name', 'Email', 'City','State','Total Sales ($)']]
+    fig = go.Figure()
+    
+    fig.add_trace(
+      go.Table(
+        columnwidth=[60,60,120,60,40,60, 40],
+        header=dict(values=list(top_spenders.columns),
+                    align='left',
+                    font=dict(size=16)
+                   ),
+        cells=dict(
+            values=top_spenders.values.transpose(),
+            align='left',
+            fill=dict(color=['rgba(220,220,220,0.3)','rgba(220,220,220,0.3)','rgba(220,220,220,0.3)','rgba(220,220,220,0.3)','rgba(220,220,220,0.3)',
+                             'lightyellow']),
+            font=dict(size=15)
+        ),
+      )
+    )
+    
+    fig.update_layout(title="Top Customers by Sales ($)",
+                      titlefont=dict(size=20),
+                      margin=go.layout.Margin(
+                        l=40,
+                        r=20,
+                        b=0,
+                        t=50,
+                        pad=4
+                      )
+    )
+                      
+    return fig
+
+# Output: fig: Plotly figure that shows histogram of lifetime spending / cust
+#         avg: Float which is the average lifetime spending ($) of a customer
+# Input:  df: pandas dataframe (ideally from filtered-dataframe div element)
+def lifetime_histogram(df):
+    cust_df = df.groupby(['Shipping Email'], as_index=False).sum()
+    cust_df['Total Spending ($)'] = cust_df.loc[:,'Subtotal'] + cust_df.loc[:,'Shipping Price']
+    
+    fig = px.histogram(cust_df, x='Total Spending ($)')
+    
+    
+    fig.update_layout(title="Lifetime Customer Sales ($)",
+                      yaxis=dict(title='# of customers'),
+                      titlefont=dict(size=20)
+                     )
+    
+    fig.update_traces(marker_color='rgb(242,207,156)')
+    
+    fig.update_xaxes(tick0=0, tickfont=dict(size=15.5), title_font=dict(size=20))
+    fig.update_yaxes(tickfont=dict(size=15.5), title_font=dict(size=20))
+    
+    avg = cust_df['Total Spending ($)'].mean()
+    
+    return fig, avg
+            
+### CALLBACK FUNCTIONS
+
+# After data has been uploaded, update figures with no user input (Both tabs)                     
+@app.callback([Output('customer-indicators', 'children'),
+               Output('dollars-histogram', 'figure'),
+               Output('orders-histogram', 'figure'),
+               Output('spenders-table', 'figure'),
+               Output('lifetime-histogram', 'figure')],
+              [Input('filtered-dataframe', 'children')])
+def render_customer_tab(json_data):
+    if json_data is not None:
+        df = pd.read_json(json_data)
+        df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
+        df['Date'] = pd.to_datetime(df['Date'])
+        
+
+        d_hist, avg_spend_order = dollars_histogram(df)
+        o_hist, avg_orders_cust = orders_histogram(df)
+        s_table = spenders_table(df)
+        l_hist, avg_cust_spend = lifetime_histogram(df)
+        
+        d = gender.Detector()
+        unique_emails = df.drop_duplicates(subset='Shipping Email')
+        first_names = unique_emails['Shipping First Name'].str.lower().dropna()
+        genders = [d.get_gender(str(i).capitalize()) for i in first_names]
+        gender_dict = dict(zip(*np.unique(genders,return_counts=True)))
+        
+        female_pct = (gender_dict['female']+gender_dict['mostly_female'])/(gender_dict['female']+gender_dict['mostly_female']+gender_dict['male']+gender_dict['mostly_male'])
+        female_pct = female_pct*100
+        
+        indicators = html.Div([
+            indicator('Avg lifetime spend / customer', '$%.2f' % avg_cust_spend),
+            indicator('Avg purchase / order', '$%.2f' % avg_spend_order),
+            indicator('% Female Customers', '%.1f%%' % female_pct)
+        ])
+        return indicators,d_hist,o_hist,s_table,l_hist
+    else:
+        return None,{},{},{},{}
+
+# Create/adjust sales/orders figures based on change in checkbox (Sales Tab)
+@app.callback([Output('sales-graph', 'figure'),
+               Output('orders-graph', 'figure')],
+              [Input('sales-checkbox','value'),
+               Input('orders-checkbox', 'value'),
+               Input('sales-time-dropdown', 'value'),
+               Input('filtered-dataframe', 'children')])
+def update_sales_figures(sales_cb, orders_cb, timestep, json_data):
+    if json_data is not None:
+        df = pd.read_json(json_data)
+        df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
+        df['Date'] = pd.to_datetime(df['Date'])
+        
+        # Return figures depending on checkbox value
+        if sales_cb: #box is checked
+            sales_fig = display_sales(df, timestep, display_product=True)
+        else:
+            sales_fig = display_sales(df, timestep, display_product=False)
+        
+        if orders_cb:
+            orders_fig = display_orders(df, timestep, display_promo=True)
+        else:
+            orders_fig = display_orders(df, timestep, display_promo=False)
+        
+        return sales_fig, orders_fig
+    else:
+        return {},{}
+
+# Filters dataframe based on date range and outputs new dataframe and figures
 @app.callback([Output('sales-indicators','children'),
                Output('filtered-dataframe', 'children'),
                Output('revenue-table', 'figure'),
@@ -1014,7 +1071,7 @@ def update_df_figures(start_date, end_date, json_data):
     
        
 
-# Updates all date picker range settings based on data frame
+# Updates all date picker range settings based on uploaded file
 @app.callback([Output('sales-datepickerrange', 'min_date_allowed'),
                Output('sales-datepickerrange', 'max_date_allowed'),
                Output('sales-datepickerrange', 'start_date'),
@@ -1042,7 +1099,7 @@ def setup_date_range(json_data):
     else:
         return [None,None,None,None]
 
-# Returns dataframe from file
+# Parses dataframe from file and displays upload status
 @app.callback([Output('dataframe', 'children'),
                Output('filename', 'children')],
               [Input('upload-data', 'contents')],
