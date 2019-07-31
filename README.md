@@ -2,11 +2,11 @@
 
 **_WeA is a dashboard that visualizes product-oriented, customer-focused insights about your Weebly store's sales._**
 
-Built using [Dash](https://github.com/plotly/dash), Weebly e-Commerce Analytics offers a minimalist web app that enables easy insight into your Weebly store's order data, beyond [Weebly's default viewer](https://www.weebly.com/home/insights).
+Built using [Dash](https://dash.plot.ly/), **Weebly e-Commerce Analytics (WeA)** offers a minimalist web app that enables easy insight into your Weebly store's order data, beyond [Weebly's default viewer](https://www.weebly.com/home/insights).
 
 ![Customer tab preview](./static/images/customer_tab.png)
 
-Check out this [live demo](https://weeblyanalytics.herokuapp.com/) of the tool.
+Check out the [live demo](https://weeblyanalytics.herokuapp.com/) of the tool.
 
 ## Basic Use (using online demo)
 
