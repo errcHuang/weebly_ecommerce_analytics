@@ -972,59 +972,59 @@ def lifetime_histogram(df):
 ### CALLBACK FUNCTIONS
 
 # After data has been uploaded, update figures with no user input (Both tabs)                     
-@app.callback([Output('customer-indicators', 'children'),
-               Output('dollars-histogram', 'figure'),
-               Output('orders-histogram', 'figure'),
-               Output('spenders-table', 'figure'),
-               Output('lifetime-histogram', 'figure')],
-              [Input('filtered-dataframe', 'children')])
-def render_customer_tab(json_data):
-    if json_data is not None:
-        df = pd.read_json(json_data)
-        df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
-        df['Date'] = pd.to_datetime(df['Date'])
-        
-
-        d_hist, avg_spend_order = dollars_histogram(df)
-        o_hist, avg_orders_cust = orders_histogram(df)
-        s_table = spenders_table(df)
-        l_hist, avg_cust_spend = lifetime_histogram(df)
-        
-        d = gender.Detector()
-        unique_emails = df.drop_duplicates(subset='Shipping Email')
-        first_names = unique_emails['Shipping First Name'].str.lower().dropna()
-        genders = [d.get_gender(str(i).capitalize()) for i in first_names]
-        gender_dict = dict(zip(*np.unique(genders,return_counts=True)))
-        
-        male_count = 0
-        female_count = 0
-        unknown_count = 0
-        
-        if 'female' in gender_dict:
-            female_count = female_count + gender_dict['female']
-        if 'mostly_female' in gender_dict:
-            female_count = female_count + gender_dict['mostly_female']
-        if 'male' in gender_dict:
-            male_count = male_count + gender_dict['male']
-        if 'mostly_male' in gender_dict:
-            male_count = male_count + gender_dict['mostly_male']
-        if 'unknown' in gender_dict:
-            unknown_count = unknown_count + gender_dict['unknown']
-            
-        if male_count == female_count == unknown_count == 0:
-            female_pct = 0
-        else:
-            female_pct = (female_count/(female_count+male_count+unknown_count))*100
-    
-        
-        indicators = html.Div([
-            indicator('Avg lifetime spend / customer', '$%.2f' % avg_cust_spend),
-            indicator('Avg purchase / order', '$%.2f' % avg_spend_order),
-            indicator('% Female Customers', '%.1f%%' % female_pct)
-        ])
-        return indicators,d_hist,o_hist,s_table,l_hist
-    else:
-        return None,{},{},{},{}
+#@app.callback([Output('customer-indicators', 'children'),
+#               Output('dollars-histogram', 'figure'),
+#               Output('orders-histogram', 'figure'),
+#               Output('spenders-table', 'figure'),
+#               Output('lifetime-histogram', 'figure')],
+#              [Input('filtered-dataframe', 'children')])
+#def render_customer_tab(json_data):
+#    if json_data is not None:
+#        df = pd.read_json(json_data)
+#        df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
+#        df['Date'] = pd.to_datetime(df['Date'])
+#        
+#
+#        d_hist, avg_spend_order = dollars_histogram(df)
+#        o_hist, avg_orders_cust = orders_histogram(df)
+#        s_table = spenders_table(df)
+#        l_hist, avg_cust_spend = lifetime_histogram(df)
+#        
+#        d = gender.Detector()
+#        unique_emails = df.drop_duplicates(subset='Shipping Email')
+#        first_names = unique_emails['Shipping First Name'].str.lower().dropna()
+#        genders = [d.get_gender(str(i).capitalize()) for i in first_names]
+#        gender_dict = dict(zip(*np.unique(genders,return_counts=True)))
+#        
+#        male_count = 0
+#        female_count = 0
+#        unknown_count = 0
+#        
+#        if 'female' in gender_dict:
+#            female_count = female_count + gender_dict['female']
+#        if 'mostly_female' in gender_dict:
+#            female_count = female_count + gender_dict['mostly_female']
+#        if 'male' in gender_dict:
+#            male_count = male_count + gender_dict['male']
+#        if 'mostly_male' in gender_dict:
+#            male_count = male_count + gender_dict['mostly_male']
+#        if 'unknown' in gender_dict:
+#            unknown_count = unknown_count + gender_dict['unknown']
+#            
+#        if male_count == female_count == unknown_count == 0:
+#            female_pct = 0
+#        else:
+#            female_pct = (female_count/(female_count+male_count+unknown_count))*100
+#    
+#        
+#        indicators = html.Div([
+#            indicator('Avg lifetime spend / customer', '$%.2f' % avg_cust_spend),
+#            indicator('Avg purchase / order', '$%.2f' % avg_spend_order),
+#            indicator('% Female Customers', '%.1f%%' % female_pct)
+#        ])
+#        return indicators,d_hist,o_hist,s_table,l_hist
+#    else:
+#        return None,{},{},{},{}
 
 # Create/adjust salesfigures based on change in checkbox (Sales Tab)
 @app.callback(Output('sales-graph', 'figure'),
@@ -1072,7 +1072,12 @@ def update_orders_graph(orders_cb, timestep, json_data):
                Output('filtered-dataframe', 'children'),
                Output('revenue-table', 'figure'),
                Output('sales-map', 'figure'),
-               Output('product-sales-map','figure')],
+               Output('product-sales-map','figure'),
+               Output('customer-indicators', 'children'),
+               Output('dollars-histogram', 'figure'),
+               Output('orders-histogram', 'figure'),
+               Output('spenders-table', 'figure'),
+               Output('lifetime-histogram', 'figure')],
               [Input('sales-datepickerrange', 'start_date'),
                Input('sales-datepickerrange', 'end_date'),
                Input('dataframe', 'children')]
@@ -1087,26 +1092,64 @@ def update_df_figures(start_date, end_date, json_data):
         start_date = dateutil.parser.parse(start_date)
         end_date = dateutil.parser.parse(end_date)
 
-        # Create filtered dataframe betwen datepickerrange dates
+        # Create filtered dataframe between datepickerrange dates
         mask = (df['Date'] >= start_date) & (df['Date'] <= end_date)
-        filtered_df = df.loc[mask]
-        # Create sales indicator
-#        return html.Div([
-#                indicator('Avg daily sales from %s to %s' % (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')), '$%.2f' % filtered_df['Total'].mean()),
-#                indicator('Total sales from %s to %s' % (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')), '$%.2f' % filtered_df['Total'].sum()),
-#                indicator('# of orders from %s to %s' (start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')), '$%d' % filtered_df['Order #'].count())
-#        ])
+        df = df.loc[mask]
+        
+        d_hist, avg_spend_order = dollars_histogram(df)
+        o_hist, avg_orders_cust = orders_histogram(df)
+        s_table = spenders_table(df)
+        l_hist, avg_cust_spend = lifetime_histogram(df)
+        
+        d = gender.Detector()
+        unique_emails = df.drop_duplicates(subset='Shipping Email')
+        first_names = unique_emails['Shipping First Name'].str.lower().dropna()
+        genders = [d.get_gender(str(i).capitalize()) for i in first_names]
+        gender_dict = dict(zip(*np.unique(genders,return_counts=True)))
+        
+        male_count = 0
+        female_count = 0
+        unknown_count = 0
+        
+        if 'female' in gender_dict:
+            female_count = female_count + gender_dict['female']
+        if 'mostly_female' in gender_dict:
+            female_count = female_count + gender_dict['mostly_female']
+        if 'male' in gender_dict:
+            male_count = male_count + gender_dict['male']
+        if 'mostly_male' in gender_dict:
+            male_count = male_count + gender_dict['mostly_male']
+        if 'unknown' in gender_dict:
+            unknown_count = unknown_count + gender_dict['unknown']
+            
+        if male_count == female_count == unknown_count == 0:
+            female_pct = 0
+        else:
+            female_pct = (female_count/(female_count+male_count+unknown_count))*100
+    
+        
+        indicators = html.Div([
+            indicator('Avg lifetime spend / customer', '$%.2f' % avg_cust_spend),
+            indicator('Avg purchase / order', '$%.2f' % avg_spend_order),
+            indicator('% Female Customers', '%.1f%%' % female_pct)
+        ])
+
         return [html.Div([
-                indicator('Avg daily sales', '$%.2f' % (filtered_df['Subtotal']+filtered_df['Shipping Price']).mean()),
-                indicator('Total sales', '$%.2f' % (filtered_df['Subtotal']+filtered_df['Shipping Price']).sum()),
-                indicator('# of orders', len(filtered_df['Order #'].unique()))
+                indicator('Avg daily sales', '$%.2f' % (df['Subtotal']+df['Shipping Price']).mean()),
+                indicator('Total sales', '$%.2f' % (df['Subtotal']+df['Shipping Price']).sum()),
+                indicator('# of orders', len(df['Order #'].unique()))
                 ]), 
-                filtered_df.to_json(date_format='iso'),
-                revenue_table(filtered_df),
-                *generate_sales_maps(pd.read_json(json_data))]
+                df.to_json(date_format='iso'),
+                revenue_table(df),
+                *generate_sales_maps(pd.read_json(json_data)),
+                indicators,
+                d_hist,
+                o_hist,
+                s_table,
+                l_hist]
         # Output filtered dataframe
     else:
-        return [None,None,{},{},{}]
+        return [None,None,{},{},{},None,{},{},{},{}]
     
        
 
