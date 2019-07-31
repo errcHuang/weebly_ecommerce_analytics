@@ -139,9 +139,11 @@ app.layout = html.Div(children=[
                 
                 html.Br(),
                    
-                # indicators row
-                html.Div(id='sales-indicators',
-                className='row'),
+                # sales indicators row
+                dcc.Loading(id='loading-sales-indicators', children=[
+                    html.Div(id='sales-indicators',
+                    className='row'),
+                ]),
                          
                 html.Br(),
                     
@@ -171,65 +173,71 @@ app.layout = html.Div(children=[
                     )
                 ], 
                 className='row'),
-                
+                 
                 # Sales/Orders Bar Charts
                 html.Div([
-                    dcc.Graph(id='sales-graph',
-                              style={'display':'inline-block'}),
-                    dcc.Graph(id='orders-graph',
-                              style={'display':'inline-block'})
+                    dcc.Loading(id='loading-sales-graph', children=[
+                        dcc.Graph(id='sales-graph', 
+                                  style={'display':'inline-block'}),
+                    ], className='six columns'),
+                    dcc.Loading(id='loading-orders-graph', children=[
+                        dcc.Graph(id='orders-graph', 
+                                  style={'display':'inline-block'})
+                    ], className='six columns')
                 ], className='row'),
-                    
-                # US Sales Map
-                html.Div([
-                    dcc.Graph(id='sales-map',
-                              style={'display':'inline-block'}),
-                    dcc.Graph(id='product-sales-map',
-                              style={'display':'inline-block'})
-                ], className='row'),
-                    
-                #html.Hr(),
-
-                #table
-                html.Div([
-                    dcc.Graph(id='revenue-table')
-                ], className='row')
+                        
+                dcc.Loading(id='loading-maps-table', children=[
+                    # US Sales Maps
+                    html.Div([
+                        dcc.Graph(id='sales-map',
+                                  style={'display':'inline-block'}),
+                        dcc.Graph(id='product-sales-map',
+                                  style={'display':'inline-block'})
+                    ], className='row'),
+    
+                    # Revenue table
+                    html.Div([
+                        dcc.Graph(id='revenue-table')
+                    ], className='row')
+                ])
             ]),
            
            ## TAB 2 ##
            dcc.Tab(id='customer-tab', label='Customer', children=[
                 html.Br(),
-                # indicators row
-                html.Div(id='customer-indicators',
-                className='row'),
-                html.Br(),
-                
-                # histograms
-                html.Div([
-                    dcc.Graph(id='dollars-histogram',
-                              style={'display':'inline-block'}),
-                    dcc.Graph(id='orders-histogram',
-                              style={'display':'inline-block'})
-                ], className='row'),
+                dcc.Loading(id='loading-customer-tab', children=[
+                    # indicators row
+                    html.Div(id='customer-indicators',
+                    className='row'),
+                         
+                    html.Br(),
+                    # histograms
+                    html.Div([
+                        dcc.Graph(id='dollars-histogram',
+                                  style={'display':'inline-block'}),
+                        dcc.Graph(id='orders-histogram',
+                                  style={'display':'inline-block'})
+                    ], className='row'),
+                        
+                    html.Br(),
+                        
+                    # lifetime spend hist
+                    html.Div([
+                        dcc.Graph(id='lifetime-histogram')
+                    ], 
+                    className='row',
+                    style={'margin':'auto',
+                           'float':'center'}),
+                        
+                    html.Br(),
                     
-                html.Br(),
-                    
-                # lifetime spend hist
-                html.Div([
-                    dcc.Graph(id='lifetime-histogram')
-                ], 
-                className='row',
-                style={'margin':'auto',
-                       'float':'center'}),
-                    
-                html.Br(),
-                
-                html.Div([
-                    dcc.Graph(id='spenders-table'),
-                ],
-                className='row',
-                style={'float':'center',
-                       'margin':'auto'})
+                    html.Div([
+                        dcc.Graph(id='spenders-table'),
+                    ],
+                    className='row',
+                    style={'float':'center',
+                           'margin':'auto'})
+                ])
                    
            ])
    ], style={'font-size': '24px'}),
@@ -988,8 +996,26 @@ def render_customer_tab(json_data):
         genders = [d.get_gender(str(i).capitalize()) for i in first_names]
         gender_dict = dict(zip(*np.unique(genders,return_counts=True)))
         
-        female_pct = (gender_dict['female']+gender_dict['mostly_female'])/(gender_dict['female']+gender_dict['mostly_female']+gender_dict['male']+gender_dict['mostly_male'])
-        female_pct = female_pct*100
+        male_count = 0
+        female_count = 0
+        unknown_count = 0
+        
+        if 'female' in gender_dict:
+            female_count = female_count + gender_dict['female']
+        if 'mostly_female' in gender_dict:
+            female_count = female_count + gender_dict['mostly_female']
+        if 'male' in gender_dict:
+            male_count = male_count + gender_dict['male']
+        if 'mostly_male' in gender_dict:
+            male_count = male_count + gender_dict['mostly_male']
+        if 'unknown' in gender_dict:
+            unknown_count = unknown_count + gender_dict['unknown']
+            
+        if male_count == female_count == unknown_count == 0:
+            female_pct = 0
+        else:
+            female_pct = (female_count/(female_count+male_count+unknown_count))*100
+    
         
         indicators = html.Div([
             indicator('Avg lifetime spend / customer', '$%.2f' % avg_cust_spend),
@@ -1000,14 +1026,12 @@ def render_customer_tab(json_data):
     else:
         return None,{},{},{},{}
 
-# Create/adjust sales/orders figures based on change in checkbox (Sales Tab)
-@app.callback([Output('sales-graph', 'figure'),
-               Output('orders-graph', 'figure')],
+# Create/adjust salesfigures based on change in checkbox (Sales Tab)
+@app.callback(Output('sales-graph', 'figure'),
               [Input('sales-checkbox','value'),
-               Input('orders-checkbox', 'value'),
                Input('sales-time-dropdown', 'value'),
                Input('filtered-dataframe', 'children')])
-def update_sales_figures(sales_cb, orders_cb, timestep, json_data):
+def update_sales_graph(sales_cb, timestep, json_data):
     if json_data is not None:
         df = pd.read_json(json_data)
         df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
@@ -1019,14 +1043,29 @@ def update_sales_figures(sales_cb, orders_cb, timestep, json_data):
         else:
             sales_fig = display_sales(df, timestep, display_product=False)
         
+        return sales_fig
+    else:
+        return {}
+    
+# Create/adjust orders figures based on change in checkbox (Sales Tab)
+@app.callback(Output('orders-graph', 'figure'),
+              [Input('orders-checkbox', 'value'),
+               Input('sales-time-dropdown', 'value'),
+               Input('filtered-dataframe', 'children')])
+def update_orders_graph(orders_cb, timestep, json_data):
+    if json_data is not None:
+        df = pd.read_json(json_data)
+        df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
+        df['Date'] = pd.to_datetime(df['Date'])
+        
         if orders_cb:
             orders_fig = display_orders(df, timestep, display_promo=True)
         else:
             orders_fig = display_orders(df, timestep, display_promo=False)
         
-        return sales_fig, orders_fig
+        return orders_fig
     else:
-        return {},{}
+        return {}
 
 # Filters dataframe based on date range and outputs new dataframe and figures
 @app.callback([Output('sales-indicators','children'),
