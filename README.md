@@ -1,3 +1,6 @@
+#### All features of WeA and more are now available in my new package, [BasketCase](https://github.com/errcHuang/BasketCase)
+
+
 # Weebly e-Commerce Analytics (WeA)
 
 **_WeA is a dashboard that visualizes product-oriented, customer-focused insights about your Weebly store's sales._**
