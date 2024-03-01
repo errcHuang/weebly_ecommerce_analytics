@@ -1,7 +1,7 @@
 numpy==1.16.4
 dash==1.0.2
 uszipcode==0.2.2
-dash_core_components==1.0.0
+dash_core_components==2.0.0
 dash_html_components==1.0.0
 plotly==4.0.0
 pandas==0.25.0
